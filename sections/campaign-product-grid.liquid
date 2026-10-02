@@ -1,0 +1,562 @@
+{% liquid
+  assign section_uid = 'campaign-products-' | append: section.id
+  assign selected_collection = section.settings.collection
+  assign limit_count = section.settings.products_limit | default: 12
+
+  assign raw_tags = section.settings.required_tags | downcase | strip
+  assign required_tags_array = raw_tags | split: ','
+%}
+
+<section
+  id="{{ section_uid }}"
+  class="cpg"
+  style="
+    --cpg-bg: {{ section.settings.bg_color }};
+    --cpg-text: {{ section.settings.text_color }};
+    --cpg-line: {{ section.settings.line_color }};
+    --cpg-card-bg: {{ section.settings.card_bg }};
+    --cpg-card-border: {{ section.settings.card_border }};
+    --cpg-swatch-border: {{ section.settings.swatch_border }};
+  "
+>
+  <div class="cpg__inner page-width">
+    {% if section.settings.title != blank %}
+      <div class="cpg__heading">
+        <span class="cpg__heading-line" aria-hidden="true"></span>
+        <h2 class="cpg__title">{{ section.settings.title }}</h2>
+        <span class="cpg__heading-line" aria-hidden="true"></span>
+      </div>
+    {% endif %}
+
+    {% if selected_collection == blank %}
+      <div class="cpg__empty">Select a collection in this section’s settings.</div>
+    {% else %}
+      <div class="cpg__grid">
+        {% assign rendered_count = 0 %}
+
+        {% for product in selected_collection.products %}
+          {% assign include_product = true %}
+
+          {% if raw_tags != blank %}
+            {% for required_tag in required_tags_array %}
+              {% assign required_tag_clean = required_tag | strip %}
+              {% if required_tag_clean != blank %}
+                {% assign product_tags_downcase = product.tags | join: '||' | downcase %}
+                {% assign needle = required_tag_clean %}
+                {% unless product_tags_downcase contains needle %}
+                  {% assign include_product = false %}
+                  {% break %}
+                {% endunless %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+
+          {% if include_product %}
+            {% assign rendered_count = rendered_count | plus: 1 %}
+            {% if rendered_count > limit_count %}
+              {% break %}
+            {% endif %}
+
+            {% liquid
+              assign color_option_index = blank
+              for option_name in product.options
+                assign option_name_down = option_name | downcase
+                if option_name_down == 'color' or option_name_down == 'colour'
+                  assign color_option_index = forloop.index0
+                  break
+                endif
+              endfor
+            %}
+
+            <article class="cpg-card">
+              <a class="cpg-card__imgwrap" href="{{ product.url }}">
+                {% if product.featured_image %}
+                  {{
+                    product.featured_image
+                    | image_url: width: 900
+                    | image_tag:
+                      class: 'cpg-card__img',
+                      loading: 'lazy',
+                      widths: '320,480,640,900',
+                      sizes: '(min-width: 1100px) 30vw, (min-width: 700px) 45vw, 90vw',
+                      alt: product.featured_image.alt | default: product.title
+                  }}
+                {% else %}
+                  <div class="cpg-card__img cpg-card__img--placeholder"></div>
+                {% endif %}
+              </a>
+
+              {% if section.settings.show_swatches and color_option_index != blank %}
+                <div class="cpg-card__swatches" aria-label="Available colors">
+                  {% assign seen_colors = '|' %}
+                  {% for variant in product.variants %}
+                    {% assign swatch_value = variant.options[color_option_index] | strip %}
+                    {% if swatch_value != blank %}
+                      {% assign token = '|' | append: swatch_value | append: '|' %}
+                      {% unless seen_colors contains token %}
+                        {% assign seen_colors = seen_colors | append: swatch_value | append: '|' %}
+                        {% assign swatch_key = swatch_value | downcase | strip %}
+                        {% assign swatch_hex = '' %}
+
+                        {%- case swatch_key -%}
+                        {%- when 'white' -%}
+                            {% assign swatch_hex = '#FFFFFF' %}
+                        {%- when 'black' -%}
+                            {% assign swatch_hex = '#111111' %}
+                        {%- when 'cool grey' -%}
+                            {% assign swatch_hex = '#8D9391' %}
+                        {%- when 'grey smoke' -%}
+                            {% assign swatch_hex = '#373D42' %}
+                        {%- when 'olive green' -%}
+                            {% assign swatch_hex = '#455236' %}
+                        {%- when 'charcoal grey' -%}
+                            {% assign swatch_hex = '#464048' %}
+                        {%- when 'brilliant blue' -%}
+                            {% assign swatch_hex = '#0E74AE' %}
+                        {%- when 'carolina blue' -%}
+                            {% assign swatch_hex = '#4B9CD3' %}
+                        {%- when 'gusty grey' -%}
+                            {% assign swatch_hex = '#7D8587' %}
+                        {%- when 'deep navy' -%}
+                            {% assign swatch_hex = '#122239' %}
+                        {%- when 'royal blue' -%}
+                            {% assign swatch_hex = '#1F57C3' %}
+                        {%- when 'steel grey' -%}
+                            {% assign swatch_hex = '#414950' %}
+                        {%- when 'dark grey heather' -%}
+                            {% assign swatch_hex = '#59606A' %}
+                        {%- when 'antique royal' -%}
+                            {% assign swatch_hex = '#3B56A8' %}
+                        {%- when 'sport grey' -%}
+                            {% assign swatch_hex = '#BCBCB8' %}
+                        {%- when 'light blue' -%}
+                            {% assign swatch_hex = '#A7CBEE' %}
+                        {%- when 'grey' -%}
+                            {% assign swatch_hex = '#808080' %}
+                        {%- when 'gray' -%}
+                            {% assign swatch_hex = '#808080' %}
+                        {%- when 'athletic heather' -%}
+                            {% assign swatch_hex = '#B8BCC2' %}
+                        {%- when 'charcoal heather' -%}
+                            {% assign swatch_hex = '#5D6066' %}
+                        {%- when 'navy heather' -%}
+                            {% assign swatch_hex = '#4A5568' %}
+                        {%- when 'royal heather' -%}
+                            {% assign swatch_hex = '#5A74B8' %}
+                        {%- when 'dark heather grey' -%}
+                            {% assign swatch_hex = '#4F5862' %}
+                        {%- when 'fan deep royal blue' -%}
+                            {% assign swatch_hex = '#1F4FB0' %}
+                        {%- when 'battleship grey' -%}
+                            {% assign swatch_hex = '#343746' %}
+                        {%- when 'black charcoal heather' -%}
+                            {% assign swatch_hex = '#3A3A3A' %}
+                        {%- when 'marshmellow' -%}
+                            {% assign swatch_hex = '#DEDEDF' %}
+
+                        {%- else -%}
+                            {%- comment -%}
+                            Fallback: try raw CSS color name (works for "red", "blue", etc.)
+                            If invalid, CSS will fail and dot may look empty/default.
+                            {%- endcomment -%}
+                            {% assign swatch_hex = swatch_value %}
+                        {%- endcase -%}
+
+                        <span
+                        class="cpg-card__swatch"
+                        title="{{ swatch_value | escape }}"
+                        aria-label="{{ swatch_value | escape }}"
+                        style="--swatch-color: {{ swatch_hex }};"
+                        ></span>
+                      {% endunless %}
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+
+              <h3 class="cpg-card__title">
+                <a href="{{ product.url }}">{{ product.title }}</a>
+              </h3>
+
+              <div class="cpg-card__price">
+                {% if product.price_varies %}
+                  {{ product.price_min | money }} - {{ product.price_max | money }}
+                {% else %}
+                  {{ product.price | money }}
+                {% endif %}
+              </div>
+            </article>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      {% if rendered_count == 0 %}
+        <div class="cpg__empty">
+          No products matched this collection{% if raw_tags != blank %} + tag filter{% endif %}.
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <style>
+    #{{ section_uid }}.cpg{
+      background: var(--cpg-bg);
+      color: var(--cpg-text);
+      padding: {{ section.settings.padding_top }}px 0 {{ section.settings.padding_bottom }}px;
+    }
+
+    #{{ section_uid }} .cpg__inner{
+      max-width: {{ section.settings.max_width }}px;
+      margin: 0 auto;
+    }
+
+    /* Heading bar like screenshot */
+    #{{ section_uid }} .cpg__heading{
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 22px;
+    }
+
+    #{{ section_uid }} .cpg__heading-line{
+        display: block;
+        height: 14px;
+        background-image:
+            linear-gradient(var(--cpg-line), var(--cpg-line)),
+            linear-gradient(var(--cpg-line), var(--cpg-line)),
+            linear-gradient(var(--cpg-line), var(--cpg-line));
+        background-repeat: no-repeat;
+        background-size: 100% 1px, 100% 1px, 100% 1px;
+        background-position: left 1px, left 6px, left 11px;
+    }
+
+    #{{ section_uid }} .cpg__title{
+      margin: 0;
+      color: var(--cpg-text);
+      font-size: clamp(18px, 2vw, 28px);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.35em;
+      line-height: 1;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    #{{ section_uid }} .cpg__grid{
+      display: grid;
+      grid-template-columns: repeat({{ section.settings.columns_desktop }}, minmax(0, 1fr));
+      gap: {{ section.settings.row_gap }}px {{ section.settings.column_gap }}px;
+      align-items: start;
+    }
+
+    #{{ section_uid }} .cpg-card{
+      text-align: center;
+      color: var(--cpg-text);
+    }
+
+    #{{ section_uid }} .cpg-card__imgwrap{
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      margin: 0 0 10px;
+    }
+
+    #{{ section_uid }} .cpg-card__img{
+        width: 100%;
+        max-height: 300px;
+        height: 300px;
+        display: block;
+        object-fit: contain;
+        object-position: center center;
+    }
+
+    /* Optional card look (first item in screenshot has box shadow vibe) */
+    {% if section.settings.enable_card_frame %}
+    #{{ section_uid }} .cpg-card__imgwrap{
+      background: var(--cpg-card-bg);
+      border: 1px solid var(--cpg-card-border);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-radius: 2px;
+      padding: 10px;
+    }
+    {% endif %}
+
+    #{{ section_uid }} .cpg-card__img--placeholder{
+      aspect-ratio: 1 / 1;
+      background: #eee;
+    }
+
+    #{{ section_uid }} .cpg-card__swatches{
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 7px;
+      margin: 4px 0 8px;
+      flex-wrap: wrap;
+      min-height: 14px;
+    }
+
+    #{{ section_uid }} .cpg-card__swatch{
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      border: 1px solid var(--cpg-swatch-border);
+      background: var(--swatch-color, #d9d9d9);
+      box-sizing: border-box;
+    }
+
+    /* White swatches need visible edge */
+    #{{ section_uid }} .cpg-card__swatch[style*="white"],
+    #{{ section_uid }} .cpg-card__swatch[style*="#fff"],
+    #{{ section_uid }} .cpg-card__swatch[style*="#ffffff"]{
+      box-shadow: inset 0 0 0 1px #bbb;
+    }
+
+    #{{ section_uid }} .cpg-card__title{
+      margin: 0 0 4px;
+      font-size: clamp(16px, 1.15vw, 20px);
+      line-height: 1.15;
+      font-weight: 700;
+    }
+
+    #{{ section_uid }} .cpg-card__title a{
+      color: inherit;
+      text-decoration: none;
+    }
+
+    #{{ section_uid }} .cpg-card__title a:hover{
+      text-decoration: underline;
+    }
+
+    #{{ section_uid }} .cpg-card__price{
+      font-size: clamp(15px, 1vw, 18px);
+      line-height: 1.1;
+      font-weight: 500;
+    }
+
+    #{{ section_uid }} .cpg__empty{
+      text-align: center;
+      padding: 18px 12px;
+      opacity: .8;
+    }
+
+    @media (max-width: 989px){
+      #{{ section_uid }} .cpg__grid{
+        grid-template-columns: repeat({{ section.settings.columns_tablet }}, minmax(0, 1fr));
+      }
+
+      #{{ section_uid }} .cpg__title{
+        letter-spacing: 0.2em;
+      }
+    }
+
+    @media (max-width: 649px){
+      #{{ section_uid }} .cpg__grid{
+        grid-template-columns: repeat({{ section.settings.columns_mobile }}, minmax(0, 1fr));
+      }
+
+      #{{ section_uid }} .cpg__heading{
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      #{{ section_uid }} .cpg__title{
+        font-size: 16px;
+        letter-spacing: 0.16em;
+      }
+    }
+  </style>
+</section>
+
+{% schema %}
+{
+  "name": "Campaign product grid",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section title",
+      "default": "APPAREL"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Collection"
+    },
+    {
+      "type": "text",
+      "id": "required_tags",
+      "label": "Required product tags (comma-separated)",
+      "default": "cacce, apparel",
+      "info": "Product must contain all listed tags. Example: cacce, apparel"
+    },
+    {
+      "type": "range",
+      "id": "products_limit",
+      "label": "Max products",
+      "min": 1,
+      "max": 50,
+      "step": 1,
+      "default": 12
+    },
+
+    {
+      "type": "header",
+      "content": "Swatches"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_swatches",
+      "label": "Show color swatches",
+      "default": true
+    },
+
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "columns_desktop",
+      "label": "Columns on desktop",
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "columns_tablet",
+      "label": "Columns on tablet",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "default": 2
+    },
+    {
+        "type": "select",
+        "id": "columns_mobile",
+        "label": "Columns on mobile",
+        "default": "1",
+        "options": [
+            { "value": "1", "label": "1" },
+            { "value": "2", "label": "2" }
+        ]
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "label": "Section max width",
+      "min": 900,
+      "max": 1800,
+      "step": 20,
+      "unit": "px",
+      "default": 1280
+    },
+    {
+      "type": "range",
+      "id": "column_gap",
+      "label": "Column gap",
+      "min": 8,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 34
+    },
+    {
+      "type": "range",
+      "id": "row_gap",
+      "label": "Row gap",
+      "min": 8,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 26
+    },
+
+    {
+      "type": "header",
+      "content": "Product image frame"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_card_frame",
+      "label": "Enable image frame / shadow",
+      "default": false
+    },
+    {
+      "type": "color",
+      "id": "card_bg",
+      "label": "Card background",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "card_border",
+      "label": "Card border",
+      "default": "#E5E5E5"
+    },
+
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background",
+      "default": "#F3F3F3"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#111111"
+    },
+    {
+      "type": "color",
+      "id": "line_color",
+      "label": "Title bar lines",
+      "default": "#A8A8A8"
+    },
+    {
+      "type": "color",
+      "id": "swatch_border",
+      "label": "Swatch border",
+      "default": "#9D9D9D"
+    },
+
+    {
+      "type": "header",
+      "content": "Spacing"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Padding top",
+      "min": 0,
+      "max": 100,
+      "step": 2,
+      "unit": "px",
+      "default": 28
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Padding bottom",
+      "min": 0,
+      "max": 100,
+      "step": 2,
+      "unit": "px",
+      "default": 28
+    }
+  ],
+  "presets": [
+    {
+      "name": "Campaign product grid"
+    }
+  ]
+}
+{% endschema %}

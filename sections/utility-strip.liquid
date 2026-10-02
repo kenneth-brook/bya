@@ -1,0 +1,145 @@
+{% comment %}
+  Utility Strip (Back / Cart) - org-ready
+  - White bar with left/right links
+  - Back link defaults to /pages/<org_handle>
+  - Cart defaults to routes.cart_url
+{% endcomment %}
+
+{% assign sid = 'utility-strip-' | append: section.id %}
+
+{%- liquid
+  assign org_handle = section.settings.org_handle | downcase | strip
+  if org_handle == blank
+    assign org_handle = 'cacce'
+  endif
+
+  assign default_back = '/pages/' | append: org_handle
+
+  assign back_href = section.settings.back_url
+  if back_href == blank
+    assign back_href = default_back
+  endif
+
+  assign cart_href = section.settings.cart_url
+  if cart_href == blank
+    assign cart_href = routes.cart_url
+  endif
+-%}
+
+<section id="{{ sid }}" class="utility-strip" data-org="{{ org_handle }}">
+  <div class="utility-strip__inner page-width">
+    <div class="utility-strip__left">
+      {% if section.settings.show_back %}
+        <a class="utility-strip__link utility-strip__link--back" href="{{ back_href }}">
+          <span class="utility-strip__icon" aria-hidden="true">←</span>
+          <span class="utility-strip__text">
+            {{ section.settings.back_label | default: 'Back to Shopping' }}
+          </span>
+        </a>
+      {% endif %}
+    </div>
+
+    <div class="utility-strip__right">
+      {% if section.settings.show_cart %}
+        <a class="utility-strip__link utility-strip__link--cart" href="{{ cart_href }}">
+          <span class="utility-strip__text">
+            {{ section.settings.cart_label | default: 'View Cart' }}
+          </span>
+          <span class="utility-strip__icon" aria-hidden="true">→</span>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <style>
+    #{{ sid }}{
+      background: {{ section.settings.bg }};
+      color: {{ section.settings.text }};
+      border-top: {{ section.settings.border_top_width }}px solid {{ section.settings.border }};
+      border-bottom: {{ section.settings.border_bottom_width }}px solid {{ section.settings.border }};
+      font-size: 14px;
+    }
+
+    #{{ sid }} .utility-strip__inner{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: {{ section.settings.pad_y }}px 0;
+    }
+
+    #{{ sid }} .utility-strip__left,
+    #{{ sid }} .utility-strip__right{
+      display: flex;
+      align-items: center;
+      min-width: 0;
+    }
+
+    #{{ sid }} .utility-strip__right{
+      margin-left: auto;
+    }
+
+    #{{ sid }} .utility-strip__link{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: inherit;
+      font-weight: 700;
+      letter-spacing: .01em;
+      white-space: nowrap;
+    }
+
+    #{{ sid }} .utility-strip__link:hover{
+      text-decoration: underline;
+    }
+
+    #{{ sid }} .utility-strip__icon{
+      font-weight: 900;
+      line-height: 1;
+      opacity: .9;
+    }
+
+    @media (max-width: 640px){
+      #{{ sid }} .utility-strip__inner{
+        padding: {{ section.settings.pad_y_mobile }}px 0;
+      }
+      #{{ sid }} .utility-strip__link{
+        font-size: 13px;
+      }
+    }
+  </style>
+</section>
+
+{% schema %}
+{
+  "name": "Utility strip",
+  "enabled_on": {
+    "templates": ["product", "page"]
+  },
+  "settings": [
+    { "type": "text", "id": "org_handle", "label": "Org handle (page handle)", "default": "cacce", "info": "Used to build default Back link: /pages/<handle> (example: gacce)" },
+
+    { "type": "checkbox", "id": "show_back", "label": "Show Back link", "default": true },
+    { "type": "text", "id": "back_label", "label": "Back label", "default": "Back to Shopping" },
+    { "type": "url", "id": "back_url", "label": "Back URL (optional override)" },
+
+    { "type": "checkbox", "id": "show_cart", "label": "Show Cart link", "default": true },
+    { "type": "text", "id": "cart_label", "label": "Cart label", "default": "View Cart" },
+    { "type": "url", "id": "cart_url", "label": "Cart URL (optional override)" },
+
+    { "type": "color", "id": "bg", "label": "Background", "default": "#ffffff" },
+    { "type": "color", "id": "text", "label": "Text color", "default": "#111111" },
+    { "type": "color", "id": "border", "label": "Border color", "default": "#e6e6e6" },
+
+    { "type": "range", "id": "border_top_width", "label": "Top border", "min": 0, "max": 4, "step": 1, "default": 0, "unit": "px" },
+    { "type": "range", "id": "border_bottom_width", "label": "Bottom border", "min": 0, "max": 4, "step": 1, "default": 1, "unit": "px" },
+
+    { "type": "range", "id": "pad_y", "label": "Vertical padding", "min": 0, "max": 24, "step": 1, "default": 10, "unit": "px" },
+    { "type": "range", "id": "pad_y_mobile", "label": "Mobile vertical padding", "min": 0, "max": 24, "step": 1, "default": 10, "unit": "px" }
+  ],
+  "presets": [
+    { "name": "Utility strip" }
+  ]
+}
+{% endschema %}

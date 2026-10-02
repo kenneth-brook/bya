@@ -1,0 +1,423 @@
+{% liquid
+  assign sid = 'cacce-footer-' | append: section.id
+%}
+
+<footer id="{{ sid }}" class="cacce-footer">
+  <!-- Help Bar -->
+  <div class="cacce-footer__help">
+    <div class="cacce-footer__help-inner page-width">
+      <div class="cacce-footer__help-text">
+        <strong>{{ section.settings.help_prefix }}</strong>
+        <span>
+          {{ section.settings.help_text }}
+          <a href="mailto:{{ section.settings.help_email }}">{{ section.settings.help_email }}</a>
+          {% if section.settings.help_phone != blank %}
+            <span>or call</span>
+            <a href="tel:{{ section.settings.help_phone | replace: ' ', '' | replace: '(', '' | replace: ')', '' | replace: '-', '' }}">
+              {{ section.settings.help_phone }}
+            </a>.
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="cacce-footer__main">
+    <div class="cacce-footer__inner page-width">
+      {% if section.settings.logo != blank %}
+        <div class="cacce-footer__logo">
+          {{
+            section.settings.logo
+            | image_url: width: 800
+            | image_tag:
+              class: 'cacce-footer__logo-img',
+              alt: section.settings.logo_alt | default: 'Footer logo',
+              loading: 'lazy'
+          }}
+        </div>
+      {% endif %}
+
+      <div class="cacce-footer__contact">
+        {% if section.settings.phone_display != blank %}
+          <a class="cacce-footer__contact-link" href="tel:{{ section.settings.phone_display | replace: ' ', '' | replace: '(', '' | replace: ')', '' | replace: '-', '' }}">
+            {{ section.settings.phone_display }}
+          </a>
+        {% endif %}
+
+        {% if section.settings.site_label != blank and section.settings.site_url != blank %}
+          <span class="cacce-footer__dot">•</span>
+          <a class="cacce-footer__contact-link" href="{{ section.settings.site_url }}">
+            {{ section.settings.site_label }}
+          </a>
+        {% endif %}
+      </div>
+
+      <div class="cacce-footer__rule" aria-hidden="true"></div>
+
+      <div class="cacce-footer__policies">
+        {% if section.settings.policy_menu != blank %}
+          <nav aria-label="Footer policies">
+            <ul class="cacce-footer__policy-list" role="list">
+              {% for link in linklists[section.settings.policy_menu].links %}
+                <li class="cacce-footer__policy-item">
+                  <a href="{{ link.url }}" class="cacce-footer__policy-link">{{ link.title }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          </nav>
+        {% else %}
+          <div class="cacce-footer__policy-fallback">
+            Add a menu in settings for policy links.
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="cacce-footer__copyright">
+        {{ section.settings.copyright_text }}
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  /* Scoped */
+  #{{ sid }}{
+    --cf-blue: {{ section.settings.accent_blue }};
+    --cf-black: {{ section.settings.help_bg }};
+    --cf-text: {{ section.settings.text_color }};
+    --cf-link: {{ section.settings.link_color }};
+    --cf-rule: {{ section.settings.rule_color }};
+    font-size: 14px;
+  }
+
+  #{{ sid }} .page-width{
+    max-width: {{ section.settings.max_width }}px;
+    margin: 0 auto;
+    padding-left: clamp(14px, 2vw, 24px);
+    padding-right: clamp(14px, 2vw, 24px);
+  }
+
+  /* ===========================
+     HELP BAR (with striped wedges)
+     =========================== */
+  #{{ sid }} .cacce-footer__help{
+    background: var(--cf-black);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Blue wedges WITH stripes baked in */
+  #{{ sid }} .cacce-footer__help::before,
+  #{{ sid }} .cacce-footer__help::after{
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 140px;
+    z-index: 1;
+
+    background:
+  linear-gradient(
+    135deg,
+    transparent 0 35%,
+    rgba(0,0,0,0.98) 35% 43%,
+    transparent 43% 60%,
+    rgba(0,0,0,0.98) 60% 68%,
+    transparent 68% 100%
+  ),
+  var(--cf-blue);
+  }
+
+  /* LEFT wedge shape */
+  #{{ sid }} .cacce-footer__help::before{
+    left: 0;
+    clip-path: polygon(0 0, 100% 0, 72% 100%, 0 100%);
+  }
+
+  /* RIGHT wedge shape */
+  #{{ sid }} .cacce-footer__help::after{
+    right: 0;
+    clip-path: polygon(28% 0, 100% 0, 100% 100%, 0 100%);
+  }
+
+  /* Text above wedges */
+  #{{ sid }} .cacce-footer__help-inner{
+    position: relative;
+    z-index: 2;
+    padding: 12px 0;
+  }
+
+  #{{ sid }} .cacce-footer__help-text{
+    text-align: center;
+    font-weight: 500;
+    letter-spacing: .01em;
+  }
+
+  #{{ sid }} .cacce-footer__help-text strong{
+    font-weight: 800;
+    margin-right: 6px;
+  }
+
+  #{{ sid }} .cacce-footer__help-text a{
+    color: #a7d4ff;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  #{{ sid }} .cacce-footer__help-text a:hover{
+    text-decoration: underline;
+  }
+
+  /* ===========================
+     MAIN FOOTER BODY
+     =========================== */
+  #{{ sid }} .cacce-footer__main{
+    background: #fff;
+    color: var(--cf-text);
+    padding: 18px 0 20px;
+  }
+
+  #{{ sid }} .cacce-footer__inner{
+    text-align: center;
+  }
+
+  #{{ sid }} .cacce-footer__logo{
+    margin: 6px 0 8px;
+  }
+
+  #{{ sid }} .cacce-footer__logo-img{
+    height: {{ section.settings.logo_height }}px;
+    width: auto;
+    max-width: 100%;
+    display: inline-block;
+  }
+
+  #{{ sid }} .cacce-footer__contact{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  #{{ sid }} .cacce-footer__contact-link{
+    color: var(--cf-link);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  #{{ sid }} .cacce-footer__contact-link:hover{
+    text-decoration: underline;
+  }
+
+  #{{ sid }} .cacce-footer__dot{
+    opacity: .6;
+  }
+
+  #{{ sid }} .cacce-footer__rule{
+    height: 1px;
+    background: var(--cf-rule);
+    max-width: 720px;
+    margin: 10px auto 10px;
+  }
+
+  #{{ sid }} .cacce-footer__policy-list{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 12px;
+  }
+
+  #{{ sid }} .cacce-footer__policy-item{
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* separators like " | " */
+  #{{ sid }} .cacce-footer__policy-item:not(:last-child)::after{
+    content: "|";
+    margin-left: 10px;
+    opacity: .55;
+  }
+
+  #{{ sid }} .cacce-footer__policy-link{
+    color: #444;
+    text-decoration: none;
+  }
+
+  #{{ sid }} .cacce-footer__policy-link:hover{
+    text-decoration: underline;
+  }
+
+  #{{ sid }} .cacce-footer__policy-fallback{
+    opacity: .7;
+    font-size: 12px;
+  }
+
+  #{{ sid }} .cacce-footer__copyright{
+    margin-top: 8px;
+    font-size: 12px;
+    opacity: .85;
+  }
+
+  /* ===========================
+     MOBILE
+     =========================== */
+  @media (max-width: 640px){
+    #{{ sid }} .cacce-footer__help-text{
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    #{{ sid }} .cacce-footer__logo-img{
+      height: max(34px, calc({{ section.settings.logo_height }}px * 0.8));
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "CACCE Footer",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Help bar"
+    },
+    {
+      "type": "text",
+      "id": "help_prefix",
+      "label": "Prefix text",
+      "default": "Need help?"
+    },
+    {
+      "type": "text",
+      "id": "help_text",
+      "label": "Help text (before email/phone)",
+      "default": "Contact us at"
+    },
+    {
+      "type": "text",
+      "id": "help_email",
+      "label": "Email",
+      "default": "info@365degreetotalmarketing.com"
+    },
+    {
+      "type": "text",
+      "id": "help_phone",
+      "label": "Phone (help bar)",
+      "default": "800-697-5568"
+    },
+
+    {
+      "type": "header",
+      "content": "Main footer"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Footer logo"
+    },
+    {
+      "type": "text",
+      "id": "logo_alt",
+      "label": "Logo alt text",
+      "default": "365 Degree Total Marketing"
+    },
+    {
+      "type": "range",
+      "id": "logo_height",
+      "label": "Logo height",
+      "min": 24,
+      "max": 120,
+      "step": 2,
+      "unit": "px",
+      "default": 44
+    },
+    {
+      "type": "text",
+      "id": "phone_display",
+      "label": "Phone (main footer)",
+      "default": "800-698-5568"
+    },
+    {
+      "type": "text",
+      "id": "site_label",
+      "label": "Website label",
+      "default": "365DegreeTotalMarketing.com"
+    },
+    {
+      "type": "url",
+      "id": "site_url",
+      "label": "Website URL"
+    },
+    {
+      "type": "link_list",
+      "id": "policy_menu",
+      "label": "Policy links menu"
+    },
+    {
+      "type": "text",
+      "id": "copyright_text",
+      "label": "Copyright text",
+      "default": "© 2026 365 Degree Total Marketing"
+    },
+
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "color",
+      "id": "accent_blue",
+      "label": "Accent blue",
+      "default": "#4B8BCD"
+    },
+    {
+      "type": "color",
+      "id": "help_bg",
+      "label": "Help bar background",
+      "default": "#0B0B0B"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#111111"
+    },
+    {
+      "type": "color",
+      "id": "link_color",
+      "label": "Link color",
+      "default": "#1B65D6"
+    },
+    {
+      "type": "color",
+      "id": "rule_color",
+      "label": "Divider color",
+      "default": "#CFCFCF"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "label": "Max width",
+      "min": 900,
+      "max": 1800,
+      "step": 20,
+      "unit": "px",
+      "default": 1400
+    }
+  ],
+  "presets": [
+    { "name": "CACCE Footer" }
+  ]
+}
+{% endschema %}

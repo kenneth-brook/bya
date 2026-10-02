@@ -1,0 +1,864 @@
+{% liquid
+  assign section_id = 'org-header-' | append: section.id
+
+  comment
+    Determine org key:
+    1) template suffix (best: page.cacce, product.gacce, etc.)
+    2) fallback: /pages/<handle> in URL path
+  endcomment
+  assign org = template.suffix | downcase | strip
+  if org == blank
+    if request.path contains '/pages/'
+      assign org = request.path | split: '/pages/' | last | split: '/' | first | downcase | strip
+    endif
+  endif
+
+  comment
+    Defaults
+  endcomment
+  assign active_logo = section.settings.logo_default
+  assign active_alt  = section.settings.logo_default_alt | default: shop.name
+  assign active_menu = section.settings.menu_default
+  assign active_logo_link = section.settings.logo_link_default
+
+  comment
+    Org overrides via blocks (scales to 12+ orgs without adding schema fields)
+  endcomment
+  for block in section.blocks
+    if block.type == 'org'
+      assign h = block.settings.org_handle | downcase | strip
+      if h != blank and h == org
+        if block.settings.logo != blank
+          assign active_logo = block.settings.logo
+          assign active_alt = block.settings.logo_alt | default: shop.name
+        endif
+        if block.settings.menu != blank
+          assign active_menu = block.settings.menu
+        endif
+        if block.settings.logo_link != blank
+          assign active_logo_link = block.settings.logo_link
+        endif
+        break
+      endif
+    endif
+  endfor
+
+  if active_logo_link == blank
+    assign active_logo_link = routes.root_url
+  endif
+%}
+
+<section id="{{ section_id }}" class="cacce-header{% if section.settings.sticky_header %} is-sticky{% endif %}" data-org="{{ org }}">
+  <header class="cacce-header__bar">
+    <div class="cacce-header__inner page-width">
+      <div class="cacce-header__left">
+        <button
+          class="cacce-header__mobile-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="{{ section_id }}-mobile-panel"
+          aria-label="Open menu"
+        >
+          <span></span><span></span><span></span>
+        </button>
+
+        <a class="cacce-header__logo-link" href="{{ active_logo_link }}">
+          {% if active_logo != blank %}
+            {{
+              active_logo
+              | image_url: width: 400
+              | image_tag:
+                class: 'cacce-header__logo-img',
+                alt: active_alt,
+                loading: 'eager'
+            }}
+          {% else %}
+            <span class="cacce-header__logo-text">{{ section.settings.logo_fallback_text | default: shop.name }}</span>
+          {% endif %}
+        </a>
+      </div>
+
+      <div class="cacce-header__center">
+        <nav class="cacce-header__nav" aria-label="Primary">
+          {% if linklists[active_menu] != blank and linklists[active_menu].links.size > 0 %}
+            <ul class="cacce-header__menu list-unstyled" role="list">
+              {% for link in linklists[active_menu].links %}
+                <li class="cacce-header__menu-item{% if link.links != blank %} has-submenu{% endif %}">
+                  <a
+                    href="{{ link.url }}"
+                    class="cacce-header__menu-link{% if link.current %} is-current{% endif %}"
+                    {% if link.current %}aria-current="page"{% endif %}
+                  >
+                    <span>{{ link.title }}</span>
+                    {% if link.links != blank %}
+                      <svg viewBox="0 0 12 12" aria-hidden="true" class="cacce-header__caret">
+                        <path d="M2 4.5L6 8.5L10 4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    {% endif %}
+                  </a>
+
+                  {% if link.links != blank %}
+                    <div class="cacce-header__submenu-wrap">
+                      <ul class="cacce-header__submenu list-unstyled" role="list">
+                        {% for child_link in link.links %}
+                          <li class="cacce-header__submenu-item">
+                            <a
+                              href="{{ child_link.url }}"
+                              class="cacce-header__submenu-link{% if child_link.current %} is-current{% endif %}"
+                              {% if child_link.current %}aria-current="page"{% endif %}
+                            >
+                              {{ child_link.title }}
+                            </a>
+
+                            {% if child_link.links != blank %}
+                              <ul class="cacce-header__submenu-level2 list-unstyled" role="list">
+                                {% for grandchild_link in child_link.links %}
+                                  <li>
+                                    <a
+                                      href="{{ grandchild_link.url }}"
+                                      class="cacce-header__submenu-link--lvl2{% if grandchild_link.current %} is-current{% endif %}"
+                                      {% if grandchild_link.current %}aria-current="page"{% endif %}
+                                    >
+                                      {{ grandchild_link.title }}
+                                    </a>
+                                  </li>
+                                {% endfor %}
+                              </ul>
+                            {% endif %}
+                          </li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="cacce-header__menu-empty">
+              Assign a menu in this section’s settings.
+            </div>
+          {% endif %}
+        </nav>
+      </div>
+
+      <div class="cacce-header__right">
+        {% if section.settings.show_account_link %}
+          <a class="cacce-header__utility-link" href="{{ section.settings.account_url | default: routes.account_login_url }}">
+            {{ section.settings.account_label | default: 'Sign In/Out' }}
+          </a>
+        {% endif %}
+
+        {% if section.settings.show_search %}
+          <a class="cacce-header__icon-btn" href="{{ routes.search_url }}" aria-label="Search">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.75" fill="none" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M16.2 16.2L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </a>
+        {% endif %}
+
+        {% if section.settings.show_cart %}
+          <a class="cacce-header__icon-btn cacce-header__cart-btn" href="{{ routes.cart_url }}" aria-label="Cart">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 4H5.2L7 14.5H17.2L19 7H6.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="9.2" cy="19" r="1.3" fill="currentColor"/>
+              <circle cx="16.2" cy="19" r="1.3" fill="currentColor"/>
+            </svg>
+            {% if cart.item_count > 0 %}
+              <span class="cacce-header__cart-count">{{ cart.item_count }}</span>
+            {% endif %}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div id="{{ section_id }}-mobile-panel" class="cacce-header__mobile-panel" hidden>
+      <div class="cacce-header__mobile-inner page-width">
+        {% if linklists[active_menu] != blank and linklists[active_menu].links.size > 0 %}
+          <nav aria-label="Mobile primary">
+            <ul class="cacce-header__mobile-list list-unstyled" role="list">
+              {% for link in linklists[active_menu].links %}
+                <li class="cacce-header__mobile-item">
+                  <a href="{{ link.url }}" class="cacce-header__mobile-link">{{ link.title }}</a>
+
+                  {% if link.links != blank %}
+                    <ul class="cacce-header__mobile-sub list-unstyled" role="list">
+                      {% for child_link in link.links %}
+                        <li>
+                          <a href="{{ child_link.url }}" class="cacce-header__mobile-sublink">{{ child_link.title }}</a>
+
+                          {% if child_link.links != blank %}
+                            <ul class="cacce-header__mobile-sub2 list-unstyled" role="list">
+                              {% for grandchild_link in child_link.links %}
+                                <li>
+                                  <a href="{{ grandchild_link.url }}" class="cacce-header__mobile-sub2link">{{ grandchild_link.title }}</a>
+                                </li>
+                              {% endfor %}
+                            </ul>
+                          {% endif %}
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </nav>
+        {% endif %}
+
+        <div class="cacce-header__mobile-utils">
+          {% if section.settings.show_account_link %}
+            <a class="cacce-header__mobile-util-link" href="{{ section.settings.account_url | default: routes.account_login_url }}">
+              {{ section.settings.account_label | default: 'Sign In/Out' }}
+            </a>
+          {% endif %}
+          {% if section.settings.show_search %}
+            <a class="cacce-header__mobile-util-link" href="{{ routes.search_url }}">Search</a>
+          {% endif %}
+          {% if section.settings.show_cart %}
+            <a class="cacce-header__mobile-util-link" href="{{ routes.cart_url }}">Cart{% if cart.item_count > 0 %} ({{ cart.item_count }}){% endif %}</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </header>
+</section>
+
+<style>
+  #{{ section_id }}{
+    --cacce-header-bg: {{ section.settings.bg_color }};
+    --cacce-header-border: {{ section.settings.border_color }};
+    --cacce-header-text: {{ section.settings.text_color }};
+    --cacce-header-hover: {{ section.settings.hover_color }};
+    --cacce-header-accent: {{ section.settings.accent_color }};
+    --cacce-header-submenu-bg: {{ section.settings.submenu_bg }};
+    --cacce-header-submenu-border: {{ section.settings.submenu_border }};
+    --cacce-header-shadow: 0 12px 30px rgba(0,0,0,.08);
+  }
+
+  #{{ section_id }} .page-width{
+    max-width: {{ section.settings.max_width }}px;
+    margin: 0 auto;
+    padding-left: clamp(14px, 2vw, 24px);
+    padding-right: clamp(14px, 2vw, 24px);
+  }
+
+  #{{ section_id }}.is-sticky{
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  #{{ section_id }} .cacce-header__bar{
+    background: var(--cacce-header-bg);
+    border-bottom: 1px solid var(--cacce-header-border);
+    color: var(--cacce-header-text);
+    position: relative;
+    z-index: 5;
+  }
+
+  #{{ section_id }} .cacce-header__inner{
+    min-height: {{ section.settings.header_height }}px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: clamp(10px, 2vw, 24px);
+  }
+
+  #{{ section_id }} .cacce-header__left{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  #{{ section_id }} .cacce-header__mobile-toggle{
+    display: none;
+    border: 0;
+    background: transparent;
+    padding: 4px;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    color: inherit;
+  }
+
+  #{{ section_id }} .cacce-header__mobile-toggle span{
+    display: block;
+    width: 22px;
+    height: 2px;
+    margin: 4px auto;
+    background: currentColor;
+    border-radius: 2px;
+  }
+
+  #{{ section_id }} .cacce-header__logo-link{
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  #{{ section_id }} .cacce-header__logo-img{
+    display: block;
+    width: auto;
+    height: {{ section.settings.logo_height }}px;
+    max-width: none;
+  }
+
+  #{{ section_id }} .cacce-header__logo-text{
+    font-weight: 700;
+    letter-spacing: .02em;
+    line-height: 1;
+    font-size: 1rem;
+  }
+
+  #{{ section_id }} .cacce-header__center{
+    min-width: 0;
+  }
+
+  #{{ section_id }} .cacce-header__nav{
+    display: flex;
+    justify-content: center;
+  }
+
+  #{{ section_id }} .cacce-header__menu{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(6px, .8vw, 14px);
+    margin: 0;
+    padding: 0;
+  }
+
+  #{{ section_id }} .cacce-header__menu-item{
+    position: relative;
+  }
+
+  #{{ section_id }} .cacce-header__menu-link{
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--cacce-header-text);
+    text-decoration: none;
+    font-size: {{ section.settings.menu_font_size }}px;
+    line-height: 1;
+    padding: 8px 8px;
+    transition: color .18s ease;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  #{{ section_id }} .cacce-header__menu-link:hover,
+  #{{ section_id }} .cacce-header__menu-link:focus-visible{
+    color: var(--cacce-header-hover);
+  }
+
+  #{{ section_id }} .cacce-header__menu-link.is-current{
+    color: var(--cacce-header-accent);
+  }
+
+  #{{ section_id }} .cacce-header__caret{
+    width: 10px;
+    height: 10px;
+    opacity: .85;
+  }
+
+  #{{ section_id }} .cacce-header__submenu-wrap{
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    min-width: 240px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+    z-index: 20;
+  }
+
+  #{{ section_id }} .cacce-header__menu-item:hover > .cacce-header__submenu-wrap,
+  #{{ section_id }} .cacce-header__menu-item:focus-within > .cacce-header__submenu-wrap{
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  #{{ section_id }} .cacce-header__submenu{
+    margin: 0;
+    padding: 10px;
+    background: var(--cacce-header-submenu-bg);
+    border: 1px solid var(--cacce-header-submenu-border);
+    border-radius: 12px;
+    box-shadow: var(--cacce-header-shadow);
+  }
+
+  #{{ section_id }} .cacce-header__submenu-item + .cacce-header__submenu-item{
+    margin-top: 2px;
+  }
+
+  #{{ section_id }} .cacce-header__submenu-link{
+    display: block;
+    text-decoration: none;
+    color: var(--cacce-header-text);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.2;
+  }
+
+  #{{ section_id }} .cacce-header__submenu-link:hover,
+  #{{ section_id }} .cacce-header__submenu-link:focus-visible{
+    background: rgba(0,0,0,.04);
+    color: var(--cacce-header-hover);
+  }
+
+  #{{ section_id }} .cacce-header__submenu-level2{
+    margin: 4px 0 0;
+    padding: 4px 0 0 10px;
+    border-left: 1px solid rgba(0,0,0,.08);
+  }
+
+  #{{ section_id }} .cacce-header__submenu-link--lvl2{
+    display: block;
+    padding: 6px 8px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--cacce-header-text);
+    font-size: 13px;
+    opacity: .9;
+  }
+
+  #{{ section_id }} .cacce-header__submenu-link--lvl2:hover,
+  #{{ section_id }} .cacce-header__submenu-link--lvl2:focus-visible{
+    background: rgba(0,0,0,.03);
+    color: var(--cacce-header-hover);
+    opacity: 1;
+  }
+
+  #{{ section_id }} .cacce-header__right{
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  #{{ section_id }} .cacce-header__utility-link{
+    color: var(--cacce-header-text);
+    text-decoration: none;
+    font-size: {{ section.settings.utility_font_size }}px;
+    line-height: 1;
+    padding: 6px 4px;
+  }
+
+  #{{ section_id }} .cacce-header__utility-link:hover,
+  #{{ section_id }} .cacce-header__utility-link:focus-visible{
+    color: var(--cacce-header-hover);
+  }
+
+  #{{ section_id }} .cacce-header__icon-btn{
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    color: var(--cacce-header-text);
+    text-decoration: none;
+  }
+
+  #{{ section_id }} .cacce-header__icon-btn:hover,
+  #{{ section_id }} .cacce-header__icon-btn:focus-visible{
+    background: rgba(0,0,0,.05);
+    color: var(--cacce-header-hover);
+  }
+
+  #{{ section_id }} .cacce-header__icon-btn svg{
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+
+  #{{ section_id }} .cacce-header__cart-count{
+    position: absolute;
+    top: 2px;
+    right: 1px;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: var(--cacce-header-accent);
+    color: #fff;
+    font-size: 10px;
+    line-height: 16px;
+    text-align: center;
+    padding: 0 4px;
+    font-weight: 700;
+  }
+
+  #{{ section_id }} .cacce-header__menu-empty{
+    font-size: 13px;
+    opacity: .7;
+    padding: 8px 0;
+  }
+
+  #{{ section_id }} .cacce-header__mobile-panel{
+    border-top: 1px solid var(--cacce-header-border);
+    background: var(--cacce-header-bg);
+  }
+
+  #{{ section_id }} .cacce-header__mobile-inner{
+    padding-top: 12px;
+    padding-bottom: 14px;
+  }
+
+  #{{ section_id }} .cacce-header__mobile-list{
+    margin: 0;
+    padding: 0;
+  }
+
+  #{{ section_id }} .cacce-header__mobile-item + .cacce-header__mobile-item{
+    border-top: 1px solid rgba(0,0,0,.06);
+  }
+
+  #{{ section_id }} .cacce-header__mobile-link{
+    display: block;
+    padding: 12px 0;
+    color: var(--cacce-header-text);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  #{{ section_id }} .cacce-header__mobile-sub{
+    margin: 0 0 10px;
+    padding: 0 0 0 12px;
+  }
+
+  #{{ section_id }} .cacce-header__mobile-sublink{
+    display: block;
+    padding: 8px 0;
+    color: var(--cacce-header-text);
+    text-decoration: none;
+    opacity: .95;
+  }
+
+  #{{ section_id }} .cacce-header__mobile-sub2{
+    margin: 0 0 8px;
+    padding: 0 0 0 12px;
+  }
+
+  #{{ section_id }} .cacce-header__mobile-sub2link{
+    display: block;
+    padding: 6px 0;
+    color: var(--cacce-header-text);
+    text-decoration: none;
+    opacity: .85;
+    font-size: 14px;
+  }
+
+  #{{ section_id }} .cacce-header__mobile-utils{
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,.08);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+
+  #{{ section_id }} .cacce-header__mobile-util-link{
+    color: var(--cacce-header-text);
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  @media (max-width: 1100px){
+    #{{ section_id }} .cacce-header__menu-link{
+      font-size: calc({{ section.settings.menu_font_size }}px - 1px);
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+  }
+
+  @media (max-width: 980px){
+    #{{ section_id }} .cacce-header__inner{
+      grid-template-columns: auto 1fr auto;
+      min-height: {{ section.settings.mobile_header_height }}px;
+    }
+
+    #{{ section_id }} .cacce-header__mobile-toggle{
+      display: inline-block;
+    }
+
+    #{{ section_id }} .cacce-header__center{
+      display: none;
+    }
+
+    #{{ section_id }} .cacce-header__logo-img{
+      height: {{ section.settings.mobile_logo_height }}px;
+    }
+
+    #{{ section_id }} .cacce-header__utility-link{
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  (() => {
+    const root = document.getElementById('{{ section_id }}');
+    if (!root) return;
+
+    const btn = root.querySelector('.cacce-header__mobile-toggle');
+    const panel = root.querySelector('.cacce-header__mobile-panel');
+
+    if (!btn || !panel) return;
+
+    btn.addEventListener('click', () => {
+      const isOpen = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!isOpen));
+      panel.hidden = isOpen;
+      root.classList.toggle('is-mobile-open', !isOpen);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!root.contains(e.target)) {
+        btn.setAttribute('aria-expanded', 'false');
+        panel.hidden = true;
+        root.classList.remove('is-mobile-open');
+      }
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Org Header",
+  "tag": "section",
+  "class": "section-org-header",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "logo_default",
+      "label": "Default logo"
+    },
+    {
+      "type": "text",
+      "id": "logo_default_alt",
+      "label": "Default logo alt text",
+      "default": "Logo"
+    },
+    {
+      "type": "text",
+      "id": "logo_fallback_text",
+      "label": "Fallback logo text",
+      "default": "Logo"
+    },
+    {
+      "type": "url",
+      "id": "logo_link_default",
+      "label": "Default logo link"
+    },
+    {
+      "type": "link_list",
+      "id": "menu_default",
+      "label": "Default primary menu"
+    },
+
+    {
+      "type": "checkbox",
+      "id": "show_account_link",
+      "label": "Show account link",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "account_label",
+      "label": "Account label",
+      "default": "Sign In/Out"
+    },
+    {
+      "type": "url",
+      "id": "account_url",
+      "label": "Account link (optional override)"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_search",
+      "label": "Show search icon",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_cart",
+      "label": "Show cart icon",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "sticky_header",
+      "label": "Sticky header",
+      "default": false
+    },
+
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "label": "Max width",
+      "min": 1000,
+      "max": 1800,
+      "step": 20,
+      "unit": "px",
+      "default": 1400
+    },
+    {
+      "type": "range",
+      "id": "header_height",
+      "label": "Desktop header height",
+      "min": 56,
+      "max": 110,
+      "step": 2,
+      "unit": "px",
+      "default": 64
+    },
+    {
+      "type": "range",
+      "id": "mobile_header_height",
+      "label": "Mobile header height",
+      "min": 50,
+      "max": 90,
+      "step": 2,
+      "unit": "px",
+      "default": 58
+    },
+    {
+      "type": "range",
+      "id": "logo_height",
+      "label": "Desktop logo height",
+      "min": 20,
+      "max": 70,
+      "step": 1,
+      "unit": "px",
+      "default": 34
+    },
+    {
+      "type": "range",
+      "id": "mobile_logo_height",
+      "label": "Mobile logo height",
+      "min": 18,
+      "max": 54,
+      "step": 1,
+      "unit": "px",
+      "default": 28
+    },
+    {
+      "type": "range",
+      "id": "menu_font_size",
+      "label": "Menu font size",
+      "min": 11,
+      "max": 18,
+      "step": 1,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "utility_font_size",
+      "label": "Utility font size",
+      "min": 11,
+      "max": 16,
+      "step": 1,
+      "unit": "px",
+      "default": 12
+    },
+
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Bottom border",
+      "default": "#e6e6e6"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#111111"
+    },
+    {
+      "type": "color",
+      "id": "hover_color",
+      "label": "Hover text",
+      "default": "#4b8bcd"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent",
+      "default": "#4b8bcd"
+    },
+    {
+      "type": "color",
+      "id": "submenu_bg",
+      "label": "Submenu background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "submenu_border",
+      "label": "Submenu border",
+      "default": "#e7e7e7"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "org",
+      "name": "Org override",
+      "settings": [
+        {
+          "type": "text",
+          "id": "org_handle",
+          "label": "Org handle (template suffix / page handle)",
+          "info": "Example: cacce, gacce"
+        },
+        {
+          "type": "image_picker",
+          "id": "logo",
+          "label": "Logo"
+        },
+        {
+          "type": "text",
+          "id": "logo_alt",
+          "label": "Logo alt text",
+          "default": "Logo"
+        },
+        {
+          "type": "url",
+          "id": "logo_link",
+          "label": "Logo link (optional)"
+        },
+        {
+          "type": "link_list",
+          "id": "menu",
+          "label": "Primary menu"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "Org Header" }
+  ]
+}
+{% endschema %}

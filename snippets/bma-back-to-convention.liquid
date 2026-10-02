@@ -1,0 +1,48 @@
+{%- comment -%}
+  Back to Convention button/link
+  - Defaults to /pages/<last_org>
+  - Uses template suffix when available
+  - Falls back to localStorage/cookie (set by tracker)
+  Usage:
+    {% render 'bma-back-to-convention' %}
+    {% render 'bma-back-to-convention', label: 'Back to Shopping', class: 'button button--secondary', fallback: '/pages/cacce' %}
+{%- endcomment -%}
+
+{%- liquid
+  assign _label = label | default: 'Continue Shopping'
+  assign _class = class | default: 'button'
+  assign _fallback = fallback | default: '/pages/cacce'
+  assign _id = id | default: 'bma-back-to-convention'
+-%}
+
+<a
+  class="{{ _class }}"
+  id="{{ _id }}"
+  href="{{ _fallback }}"
+  data-bma-back-to-convention
+>
+  <span class="button-text">{{ _label }}</span>
+</a>
+
+<script>
+  (function () {
+    var a = document.getElementById({{ _id | json }});
+    if (!a) return;
+
+    // Prefer Liquid-known org
+    var org = {{ _org | json }};
+
+    function getCookie(name){
+      var m = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+      return m ? decodeURIComponent(m[2]) : "";
+    }
+
+    // If template suffix is blank, use saved org
+    if (!org) {
+      try { org = localStorage.getItem("bma_org") || ""; } catch (e) {}
+      if (!org) org = getCookie("bma_org");
+    }
+
+    if (org) a.href = "/pages/" + org;
+  })();
+</script>

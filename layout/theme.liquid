@@ -1,0 +1,228 @@
+<!doctype html>
+<html
+  {% if request.design_mode %}
+    class="shopify-design-mode"
+  {% endif %}
+  lang="{{ request.locale.iso_code }}"
+>
+  <head>
+    {%- if settings.favicon != blank -%}
+      <link
+        rel="icon"
+        type="image/png"
+        href="{{ settings.favicon | image_url: width: 32, height: 32 }}"
+      >
+    {%- endif -%}
+
+    {% comment %} This a way to wait for main content to load when navigating to a new page so that the view transitions can work consistently {% endcomment %}
+    {% if settings.transition_to_main_product or settings.page_transition_enabled %}
+      <link
+        rel="expect"
+        href="#MainContent"
+        blocking="render"
+        id="view-transition-render-blocker"
+      >
+    {% endif %}
+
+    {%- render 'meta-tags' -%}
+    {%- render 'stylesheets' -%}
+    {%- render 'fonts' -%}
+    {%- render 'scripts' -%}
+    {%- render 'theme-styles-variables' -%}
+    {%- render 'color-schemes' -%}
+
+    {% if request.design_mode %}
+      {%- render 'theme-editor' -%}
+    {% endif %}
+
+    {{ content_for_header }}
+  </head>
+
+  <script>
+  (function () {
+    // Determine org from template suffix first (product.cacce, page.gacce, etc.)
+    var org = "{{ template.suffix | downcase | strip }}";
+
+    // Fallback: if on /pages/<handle>, infer from URL path
+    if (!org) {
+      var path = window.location.pathname || "";
+      var m = path.match(/^\/pages\/([^\/?#]+)/i);
+      if (m && m[1]) org = (m[1] || "").toLowerCase();
+    }
+
+    // Only store if it looks like a real org key
+    if (org) {
+      try { localStorage.setItem("bma_org", org); } catch (e) {}
+      // optional cookie backup
+      document.cookie = "bma_org=" + encodeURIComponent(org) + "; path=/; max-age=2592000";
+    }
+  })();
+</script>
+
+  <body class="page-width-{{ settings.page_width }} card-hover-effect-{{ settings.card_hover_effect }}">
+    {% render 'skip-to-content-link', href: '#MainContent', text: 'accessibility.skip_to_text' %}
+    <div id="header-group">
+      {% comment %} Org-aware header group routing {% endcomment %}
+      {% assign org = template.suffix | downcase | strip %}
+
+      {% if org == blank and request.path contains '/pages/' %}
+        {% assign org = request.path | split: '/pages/' | last | split: '/' | first | downcase | strip %}
+      {% endif %}
+
+      {% if org == 'gacce' %}
+        {% sections 'header-group-gacce' %}
+      {% elsif org == 'cacce' %}
+        {% sections 'header-group-cacce' %}
+      {% else %}
+        {% sections 'header-group' %}
+      {% endif %}
+    </div>
+
+    <script>
+      // Inline header height and menu style calculations to prevent layout shift
+      // Note: Updates in calculateHeaderGroupHeight(), updateTransparentHeaderOffset() and setHeaderMenuStyle() utilities.js should be kept in sync with this function
+      (function setHeaderHeighCustomProperties() {
+        /*
+         * Header calculation functions for maintaining CSS variables
+         * Mimic calculateHeaderGroupHeight() in utilities.js
+         */
+        const header = document.querySelector('header-component');
+        const headerGroup = document.querySelector('#header-group');
+        const hasHeaderSection = headerGroup?.querySelector('.header-section');
+
+        if (!header || !headerGroup) return;
+
+        const headerTopRow = header.querySelector('.header__row--top');
+        const headerHeight = header.offsetHeight;
+
+        // Calculate the total height of the header group
+        let headerGroupHeight = 0;
+        const children = headerGroup.children;
+        for (let i = 0; i < children.length; i++) {
+          const element = children[i];
+          if (element === header || !(element instanceof HTMLElement)) continue;
+          headerGroupHeight += element.offsetHeight;
+        }
+
+        // Check for transparent header special case
+        if (header.hasAttribute('transparent') && header.parentElement?.nextElementSibling) {
+          headerGroupHeight += headerHeight;
+        }
+
+        // Set CSS variables
+        document.body.style.setProperty('--header-height', `${headerHeight}px`);
+        document.body.style.setProperty('--header-group-height', `${headerGroupHeight}px`);
+
+        if (headerTopRow) {
+          window.requestAnimationFrame(function () {
+            document.body.style.setProperty('--top-row-height', `${headerTopRow.offsetHeight}px`);
+          });
+        }
+
+        /**
+         * Updates CSS custom properties for transparent header offset calculation
+         * Mimic updateTransparentHeaderOffset() in utilities.js
+         */
+
+        if (!hasHeaderSection || !header?.hasAttribute('transparent')) {
+          document.body.style.setProperty('--transparent-header-offset-boolean', '0');
+          return;
+        }
+
+        const hasImmediateSection = hasHeaderSection.nextElementSibling?.classList.contains('shopify-section');
+
+        const shouldApplyOffset = !hasImmediateSection ? '1' : '0';
+        document.body.style.setProperty('--transparent-header-offset-boolean', shouldApplyOffset);
+      })();
+
+      (function setHeaderMenuStyle() {
+        const headerComponent = document.querySelector('#header-component');
+        if (headerComponent) {
+          const isTouchDevice = 'ontouchstart' in window && navigator.maxTouchPoints > 0;
+          const overflowList = headerComponent?.querySelector('overflow-list');
+          const hasReachedMinimum = overflowList && overflowList.hasAttribute('minimum-reached');
+          headerComponent.dataset.menuStyle = isTouchDevice || hasReachedMinimum ? 'drawer' : 'menu';
+        }
+      })();
+    </script>
+
+    <main
+      id="MainContent"
+      class="content-for-layout"
+      role="main"
+      data-page-transition-enabled="{{ settings.page_transition_enabled }}"
+      data-product-transition="{{ settings.transition_to_main_product }}"
+      data-template="{{ template }}"
+    >
+      {{ content_for_layout }}
+    </main>
+
+    <footer>
+      {% sections 'footer-group' %}
+    </footer>
+
+    {% render 'search-modal' %}
+
+    {% if settings.quick_add or settings.mobile_quick_add %}
+      {% render 'quick-add-modal' %}
+    {% endif %}
+
+    <script>
+  (function () {
+    function getCookie(name){
+      var m = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+      return m ? decodeURIComponent(m[2]) : "";
+    }
+
+    function getOrg() {
+      // Prefer template suffix if present (page.gacce, product.cacce)
+      var org = "{{ template.suffix | downcase | strip }}";
+      if (org) return org;
+
+      // Fallback: /pages/<handle>
+      var path = window.location.pathname || "";
+      var m = path.match(/^\/pages\/([^\/?#]+)/i);
+      if (m && m[1]) return (m[1] || "").toLowerCase();
+
+      // Saved org from browsing
+      try { org = localStorage.getItem("bma_org") || ""; } catch(e) {}
+      if (!org) org = getCookie("bma_org");
+
+      return (org || "").toLowerCase();
+    }
+
+    function rememberOrg() {
+      var org = getOrg();
+      if (!org) return;
+      try { localStorage.setItem("bma_org", org); } catch (e) {}
+      document.cookie = "bma_org=" + encodeURIComponent(org) + "; path=/; max-age=2592000";
+    }
+
+    function rewireBackButtons() {
+      var org = getOrg();
+      if (!org) return;
+
+      var href = "/pages/" + org;
+      document.querySelectorAll('a[data-bma-back-to-convention]').forEach(function(a){
+        a.href = href;
+      });
+    }
+
+    // Initial run
+    rememberOrg();
+    rewireBackButtons();
+
+    // Rewire after dynamic updates (cart emptied, drawer rerenders, etc.)
+    var mo = new MutationObserver(function(){
+      rewireBackButtons();
+    });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+
+    // Extra: catch common cart update hooks (safe even if unused)
+    document.addEventListener('cart:updated', rewireBackButtons);
+    document.addEventListener('cart:refresh', rewireBackButtons);
+    document.addEventListener('ajaxProduct:added', rewireBackButtons);
+  })();
+</script>
+  </body>
+</html>

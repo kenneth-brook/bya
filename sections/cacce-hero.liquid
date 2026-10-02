@@ -1,0 +1,304 @@
+<section
+  class="cacce-hero"
+  id="cacce-hero-{{ section.id }}"
+  style="--strip: {{ section.settings.strip_height }}px;"
+>
+  <div class="cacce-hero__inner page-width">
+    <div class="cacce-hero__copy">
+      {% if section.settings.eyebrow != blank %}
+        <p class="cacce-hero__eyebrow">{{ section.settings.eyebrow }}</p>
+      {% endif %}
+
+      {% if section.settings.title != blank %}
+        <h1 class="cacce-hero__title">{{ section.settings.title }}</h1>
+      {% endif %}
+
+      {% if section.settings.body != blank %}
+        <div class="cacce-hero__body rte">{{ section.settings.body }}</div>
+      {% endif %}
+
+      {% if section.settings.button_label != blank and section.settings.button_link != blank %}
+        <a class="cacce-hero__btn" href="{{ section.settings.button_link }}">
+          {{ section.settings.button_label }}
+        </a>
+      {% endif %}
+    </div>
+
+    <div class="cacce-hero__art">
+      {% if section.settings.people_image != blank %}
+        <img
+          class="cacce-hero__img"
+          src="{{ section.settings.people_image | image_url: width: 1800 }}"
+          alt="{{ section.settings.people_alt | escape }}"
+          width="{{ section.settings.people_image.width }}"
+          height="{{ section.settings.people_image.height }}"
+          loading="eager"
+        >
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Scoped to this section instance */
+  #cacce-hero-{{ section.id }}{
+    --hero-blue: #4B8BCD;
+    --hero-text: #ffffff;
+    --hero-btn-blue: #1768e5;
+    --hero-copy-max: 540px;
+    --hero-min-height: 370px;
+
+    position: relative;
+    overflow: hidden;
+
+    /* White strip + blue field */
+    background: linear-gradient(
+      to bottom,
+      #ffffff 0,
+      #ffffff var(--strip),
+      var(--hero-blue) var(--strip),
+      var(--hero-blue) 100%
+    );
+  }
+
+  #cacce-hero-{{ section.id }} .cacce-hero__inner{
+    position: relative;
+    min-height: var(--hero-min-height);
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+
+    /* kill the giant top/bottom padding issue */
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+
+    /* keep left/right spacing sane */
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  /* If Horizon's .page-width is adding extra padding/max width, this keeps behavior stable */
+  #cacce-hero-{{ section.id }} .page-width{
+    position: relative;
+  }
+
+  #cacce-hero-{{ section.id }} .cacce-hero__copy{
+    position: relative;
+    z-index: 2;
+    color: var(--hero-text);
+    width: 100%;
+    max-width: var(--hero-copy-max);
+
+    /* Match the tighter inset from your target screenshot */
+    margin-left: clamp(16px, 5vw, 100px);
+
+    /* lift copy out of the white strip visually */
+    padding-top: calc(var(--strip) + 10px);
+    padding-bottom: 18px;
+  }
+
+  #cacce-hero-{{ section.id }} .cacce-hero__eyebrow{
+    margin: 0 0 8px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  #cacce-hero-{{ section.id }} .cacce-hero__title{
+    margin: 0 0 14px;
+    color: #ffffff;
+    font-size: clamp(42px, 6vw, 64px);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  #cacce-hero-{{ section.id }} .cacce-hero__body{
+    margin: 0 0 22px;
+    color: #ffffff;
+    font-size: 15px;
+    line-height: 1.7;
+    max-width: 520px;
+  }
+
+  #cacce-hero-{{ section.id }} .cacce-hero__body p{
+    margin: 0;
+    color: inherit;
+  }
+
+  #cacce-hero-{{ section.id }} .cacce-hero__btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 20px;
+    background: #ffffff;
+    color: var(--hero-btn-blue);
+    border: 2px solid var(--hero-btn-blue);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    line-height: 1;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+
+  #cacce-hero-{{ section.id }} .cacce-hero__btn:hover{
+    background: #f7f9ff;
+    color: #0f56c7;
+    border-color: #0f56c7;
+  }
+
+  /* Art pinned right/bottom so it doesn't push layout around */
+  #cacce-hero-{{ section.id }} .cacce-hero__art{
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  top: 0; /* let it use full hero height */
+  width: min(52vw, 920px); /* much larger lane */
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  z-index: 1;
+  pointer-events: none;
+}
+
+  #cacce-hero-{{ section.id }} .cacce-hero__img{
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: calc(100% + 26px);
+
+    /* nudge down slightly so shoulders sit to the bottom like design */
+    transform: translateY(20px);
+  }
+
+  /* Tablet */
+  @media screen and (max-width: 990px){
+    #cacce-hero-{{ section.id }}{
+      --hero-min-height: 320px;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__inner{
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__copy{
+      margin-left: clamp(0px, 2vw, 16px);
+      max-width: min(62%, 520px);
+      padding-top: calc(var(--strip) + 8px);
+      padding-bottom: 14px;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__title{
+      font-size: clamp(34px, 7vw, 52px);
+      margin-bottom: 12px;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__body{
+      font-size: 14px;
+      line-height: 1.55;
+      margin-bottom: 18px;
+      max-width: 44ch;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__art{
+      width: min(40vw, 360px);
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__img{
+      transform: translateY(12px);
+    }
+  }
+
+  /* Mobile */
+  @media screen and (max-width: 749px){
+    #cacce-hero-{{ section.id }}{
+      --hero-min-height: 260px;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__inner{
+      align-items: center;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__copy{
+      margin-left: 0;
+      max-width: 70%;
+      padding-top: calc(var(--strip) + 6px);
+      padding-bottom: 10px;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__eyebrow{
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__title{
+      font-size: clamp(28px, 9vw, 44px);
+      margin-bottom: 10px;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__body{
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 14px;
+      max-width: 32ch;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__btn{
+      min-height: 40px;
+      padding: 9px 16px;
+      font-size: 12px;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__art{
+      width: 36%;
+      min-width: 120px;
+      top: var(--strip);
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__img{
+      max-height: calc(100% + 10px);
+      transform: translateY(8px);
+    }
+  }
+
+  /* Tiny mobile safety */
+  @media screen and (max-width: 480px){
+    #cacce-hero-{{ section.id }} .cacce-hero__copy{
+      max-width: 68%;
+    }
+
+    #cacce-hero-{{ section.id }} .cacce-hero__body{
+      display: none; /* optional: cleaner at very small widths */
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "CACCE Hero",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "GREETINGS, WE ARE" },
+    { "type": "text", "id": "title", "label": "Title", "default": "CACCE" },
+    { "type": "richtext", "id": "body", "label": "Body" },
+    { "type": "text", "id": "button_label", "label": "Button label", "default": "ABOUT US" },
+    { "type": "url", "id": "button_link", "label": "Button link" },
+    { "type": "image_picker", "id": "people_image", "label": "People PNG" },
+    { "type": "text", "id": "people_alt", "label": "Image alt text", "default": "Three people" },
+    { "type": "range", "id": "strip_height", "min": 8, "max": 48, "step": 2, "unit": "px", "label": "White strip height", "default": 22 }
+  ],
+  "presets": [
+    { "name": "CACCE Hero" }
+  ]
+}
+{% endschema %}
