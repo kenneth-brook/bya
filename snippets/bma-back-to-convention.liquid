@@ -9,6 +9,10 @@
 {%- endcomment -%}
 
 {%- liquid
+  capture _org
+    render 'bma-org-key'
+  endcapture
+  assign _org = _org | strip
   assign _label = label | default: 'Continue Shopping'
   assign _class = class | default: 'button'
   assign _fallback = fallback | default: '/pages/cacce'

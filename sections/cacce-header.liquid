@@ -1,32 +1,10 @@
 {% liquid
   assign section_id = 'org-header-' | append: section.id
 
-  comment
-    Determine org key:
-    1) template suffix (best: page.cacce, product.gacce, etc.)
-    2) fallback: /pages/<handle> in URL path
-  endcomment
-  assign org = template.suffix | downcase | strip
-  if org == blank
-    if request.path contains '/pages/'
-      assign org = request.path | split: '/pages/' | last | split: '/' | first | downcase | strip
-    endif
-  endif
-
-  if org == blank and request.page_type == 'cart'
-  for item in cart.items
-    if item.product.tags contains 'WINTERVILLE'
-      assign org = 'winterville'
-      break
-    elsif item.product.tags contains 'GACCE'
-      assign org = 'gacce'
-      break
-    elsif item.product.tags contains 'CACCE'
-      assign org = 'cacce'
-      break
-    endif
-  endfor
-endif
+  capture org
+    render 'bma-org-key'
+  endcapture
+  assign org = org | strip
 
   comment
     Defaults
@@ -88,7 +66,7 @@ endif
                 loading: 'eager'
             }}
           {% else %}
-            <span class="cacce-header__logo-text">{{ section.settings.logo_fallback_text | default: shop.name }}</span>
+            <span class="cacce-header__logo-text">{% if org != blank %}{{ org | upcase }}{% else %}{{ section.settings.logo_fallback_text | default: shop.name }}{% endif %}</span>
           {% endif %}
         </a>
       </div>
