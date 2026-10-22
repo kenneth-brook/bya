@@ -17,13 +17,25 @@
   else
     assign variant = product.selected_or_first_available_variant
   endif
+
   assign component_name = 'quantity-selector-component'
   if line_index != null
     assign component_name = 'cart-quantity-selector-component'
   endif
 
+  assign tagged_min_quantity = 1
+
+  for tag in product.tags
+    if tag contains 'MINQTY-'
+      assign tagged_min_quantity = tag | remove: 'MINQTY-' | plus: 0
+      break
+    endif
+  endfor
+
   if min != null
     assign min_quantity = min
+  elsif tagged_min_quantity > 1
+    assign min_quantity = tagged_min_quantity
   else
     assign min_quantity = variant.quantity_rule.min | default: 1
   endif
@@ -96,6 +108,12 @@
       </span>
     </button>
   </{{ component_name }}>
+
+  {% if min_quantity > 1 and line_index == null %}
+  <div class="minimum-order-notice">
+    This item requires a minimum order of {{ min_quantity }}.
+  </div>
+{% endif %}
 
   {%- if line_index == null -%}
     {%- liquid
@@ -179,4 +197,11 @@
     font-size: var(--font-size--sm);
     font-weight: normal;
   }
+
+  .minimum-order-notice {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
 {% endstylesheet %}
