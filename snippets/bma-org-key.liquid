@@ -1,0 +1,40 @@
+{%- liquid
+  assign org_key = template.suffix | downcase | strip
+  assign valid_orgs = 'gacce,cacce,winterville,sedc' | split: ','
+  unless valid_orgs contains org_key
+    assign org_key = ''
+  endunless
+
+  if org_key == blank and request.page_type == 'page'
+    assign page_key = page.handle | downcase | strip
+    if valid_orgs contains page_key
+      assign org_key = page_key
+    endif
+  endif
+
+  if org_key == blank and request.page_type == 'product'
+    for tag in product.tags
+      assign tag_key = tag | downcase | strip
+      if valid_orgs contains tag_key
+        assign org_key = tag_key
+        break
+      endif
+    endfor
+  endif
+
+  if org_key == blank and request.page_type == 'cart'
+    for item in cart.items
+      for tag in item.product.tags
+        assign tag_key = tag | downcase | strip
+        if valid_orgs contains tag_key
+          assign org_key = tag_key
+          break
+        endif
+      endfor
+      if org_key != blank
+        break
+      endif
+    endfor
+  endif
+-%}
+{{- org_key -}}
