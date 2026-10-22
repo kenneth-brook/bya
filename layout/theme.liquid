@@ -38,59 +38,25 @@
     {{ content_for_header }}
   </head>
 
+  {% capture active_org %}{% render 'bma-org-key' %}{% endcapture %}
+  {% assign active_org = active_org | strip %}
   <script>
-  (function () {
-    // Determine org from template suffix first (product.cacce, page.gacce, etc.)
-    var org = "{{ template.suffix | downcase | strip }}";
-
-    // Fallback: if on /pages/<handle>, infer from URL path
-    if (!org) {
-      var path = window.location.pathname || "";
-      var m = path.match(/^\/pages\/([^\/?#]+)/i);
-      if (m && m[1]) org = (m[1] || "").toLowerCase();
-    }
-
-    // Only store if it looks like a real org key
-    if (org) {
-      try { localStorage.setItem("bma_org", org); } catch (e) {}
-      // optional cookie backup
-      document.cookie = "bma_org=" + encodeURIComponent(org) + "; path=/; max-age=2592000";
-    }
-  })();
-</script>
+    (function () {
+      var org = {{ active_org | json }};
+      if (!org) return;
+      try { localStorage.setItem('bma_org', org); } catch (e) {}
+      document.cookie = 'bma_org=' + encodeURIComponent(org) + '; path=/; max-age=2592000; SameSite=Lax';
+    })();
+  </script>
 
   <body class="page-width-{{ settings.page_width }} card-hover-effect-{{ settings.card_hover_effect }}">
     {% render 'skip-to-content-link', href: '#MainContent', text: 'accessibility.skip_to_text' %}
     <div id="header-group">
-      {% comment %} Org-aware header group routing {% endcomment %}
-      {% assign org = template.suffix | downcase | strip %}
-
-      {% if org == blank and request.path contains '/pages/' %}
-        {% assign org = request.path | split: '/pages/' | last | split: '/' | first | downcase | strip %}
+      {% if active_org != blank %}
+        {% sections 'header-group-gacce' %}
+      {% else %}
+        {% sections 'header-group' %}
       {% endif %}
-
-      {% if org == blank and request.page_type == 'cart' %}
-  {% for item in cart.items %}
-    {% if item.product.tags contains 'WINTERVILLE' %}
-      {% assign org = 'winterville' %}
-      {% break %}
-    {% elsif item.product.tags contains 'GACCE' %}
-      {% assign org = 'gacce' %}
-      {% break %}
-    {% elsif item.product.tags contains 'CACCE' %}
-      {% assign org = 'cacce' %}
-      {% break %}
-    {% endif %}
-  {% endfor %}
-{% endif %}
-
-      {% if org == 'gacce' or org == 'winterville' %}
-  {% sections 'header-group-gacce' %}
-{% elsif org == 'cacce' %}
-  {% sections 'header-group-cacce' %}
-{% else %}
-  {% sections 'header-group' %}
-{% endif %}
     </div>
 
     <script>
@@ -191,19 +157,20 @@
 
     function getOrg() {
       // Prefer template suffix if present (page.gacce, product.cacce)
-      var org = "{{ template.suffix | downcase | strip }}";
+      var org = {{ active_org | json }};
       if (org) return org;
 
       // Fallback: /pages/<handle>
       var path = window.location.pathname || "";
       var m = path.match(/^\/pages\/([^\/?#]+)/i);
-      if (m && m[1]) return (m[1] || "").toLowerCase();
+      if (m && m[1] && /^(gacce|cacce|winterville|sedc)$/i.test(m[1])) return m[1].toLowerCase();
 
       // Saved org from browsing
       try { org = localStorage.getItem("bma_org") || ""; } catch(e) {}
       if (!org) org = getCookie("bma_org");
 
-      return (org || "").toLowerCase();
+      org = (org || "").toLowerCase();
+      return /^(gacce|cacce|winterville|sedc)$/.test(org) ? org : "";
     }
 
     function rememberOrg() {
